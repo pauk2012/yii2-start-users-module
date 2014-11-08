@@ -43,7 +43,8 @@ class GuestController extends Controller
     public function actionLogin()
     {
         if (!Yii::$app->user->isGuest) {
-            $this->goHome();
+
+            return $this->redirect(Yii::$app->user->getReturnUrl());
         }
 
         $model = new LoginForm();
@@ -51,7 +52,8 @@ class GuestController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             if ($model->validate()) {
                 if ($model->login()) {
-                    return $this->goHome();
+
+                    return $this->redirect(Yii::$app->user->getReturnUrl());
                 }
             } elseif (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = Response::FORMAT_JSON;

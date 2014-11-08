@@ -19,6 +19,10 @@ use Yii;
 class User extends \vova07\users\models\User
 {
     /**
+     * Ключи кэша которые использует модель.
+     */
+    const CACHE_USERS_LIST_DATA = 'usersListData';
+    /**
      * @var string|null Password
      */
     public $password;
@@ -158,5 +162,20 @@ class User extends \vova07\users\models\User
         }
 
         $auth->assign($role, $this->id);
+    }
+
+    /**
+     * @return array [[DropDownList]] массив пользователей.
+     */
+    public static function getUserArray()
+    {
+        $key = self::CACHE_USERS_LIST_DATA;
+        $value = false;//Yii::$app->getCache()->get($key);
+        if ($value === false || empty($value)) {
+            $value = self::find()->select(['id', 'username'])->orderBy('username ASC')->asArray()->all();
+            $value = ArrayHelper::map($value, 'id', 'username');
+            Yii::$app->cache->set($key, $value);
+        }
+        return $value;
     }
 }
