@@ -22,8 +22,15 @@ $this->params['breadcrumbs'] = [
             'class' => 'center'
         ]
     ]
+
 ); ?>
+
     <fieldset class="registration-form">
+        <p>Войти через:</p>
+        <?= yii\authclient\widgets\AuthChoice::widget([
+            'baseAuthUrl' => ['guest/auth']
+        ]) ?>
+        <p>Или</p>
         <?= $form->field($model, 'username')->textInput(['placeholder' => $model->getAttributeLabel('username')])->label(false) ?>
         <?= $form->field($model, 'password')->passwordInput(['placeholder' => $model->getAttributeLabel('password')])->label(false) ?>
         <?= $form->field($model, 'rememberMe')->checkbox() ?>
@@ -33,4 +40,7 @@ $this->params['breadcrumbs'] = [
         &nbsp;
         <?= Html::a(Module::t('users', 'FRONTEND_LOGIN_RECOVERY'), ['recovery']) ?>
     </fieldset>
+
+
+
 <?php ActiveForm::end(); ?>

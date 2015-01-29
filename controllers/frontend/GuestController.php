@@ -3,6 +3,7 @@
 namespace vova07\users\controllers\frontend;
 
 use vova07\fileapi\actions\UploadAction as FileAPIUpload;
+use pauko\social\models\SocialProfile;
 use vova07\users\models\frontend\ActivationForm;
 use vova07\users\models\frontend\RecoveryConfirmationForm;
 use vova07\users\models\frontend\RecoveryForm;
@@ -50,9 +51,92 @@ class GuestController extends Controller
             'fileapi-upload' => [
                 'class' => FileAPIUpload::className(),
                 'path' => $this->module->avatarsTempPath
-            ]
+            ],
+            'auth' => [
+                'class' => \yii\authclient\AuthAction::className(),
+                'successCallback' => [$this, 'successCallback'],
+            ],
         ];
     }
+
+
+    public function successCallback($client)
+    {
+        $attributes = $client->getUserAttributes();
+
+
+
+        $socialProfile = SocialProfile::findOne(['service_id' => $client->getName(), 'social_id' => $attributes['id']]);
+        if ($socialProfile){
+            $user = $socialProfile->user;
+            Yii::$app->user->login($user);
+            Yii::$app->session->setFlash(
+                'success',
+                Module::t('users', 'FRONTEND_FLASH_SUCCESS_SOCIAL_LOGIN')
+            );
+
+        } else {
+            $user = new User(['scenario' => 'signup_after_oauth']);
+            $profile = new Profile();
+            $socialProfile = new SocialProfile();
+
+            switch($client->getName())
+            {
+                case'facebook':
+                    $user->username =  $client->getName() . '_' . $attributes['id'];
+                    $user->email = $attributes['email'];
+                    $profile->name = $attributes['first_name'];
+                    $profile->surname = $attributes['last_name'];
+                    $user->status_id = \vova07\users\models\User::STATUS_ACTIVE;
+                    $socialProfile->service_id = 'facebook';
+                    $socialProfile->social_id = $attributes['id'];
+                    break;
+                case'vkontakte':
+                    if (isset($client->accessToken->params['email'])){
+                        $user->email = $client->accessToken->params['email'];
+                    }
+
+                    $user->username =  $client->getName() . '_' . $attributes['uid'];
+
+                    $profile->name = $attributes['first_name'];
+                    $profile->surname = $attributes['last_name'];
+                    $user->status_id = \vova07\users\models\User::STATUS_ACTIVE;
+                    $socialProfile->service_id = 'vkontakte';
+                    $socialProfile->social_id = $attributes['uid'];
+                    break;
+                default:
+                    throw new \Exception('не реализованно ещё');
+
+            }
+
+            $user->populateRelation('profile', $profile);
+            $user->populateRelation('socialProfile', $socialProfile);
+            if ($user->save(false)) {
+                Yii::$app->user->login($user);
+                Yii::$app->session->setFlash(
+                    'success',
+                    Module::t('users', 'FRONTEND_FLASH_SUCCESS_SIGNUP_WITH_LOGIN')
+                );
+
+                //return $this->goHome();
+            } else {
+                Yii::$app->session->setFlash('danger', Module::t('users', 'FRONTEND_FLASH_FAIL_SIGNUP'));
+                //return $this->refresh();
+            }
+        }
+
+
+
+
+
+
+
+
+
+        // user login or signup comes here
+    }
+
+
 
     /**
      * Sign Up page.
@@ -263,4 +347,7 @@ class GuestController extends Controller
         );
 
     }
+
+
+
 }
