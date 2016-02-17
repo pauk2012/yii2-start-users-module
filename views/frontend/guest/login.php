@@ -27,7 +27,7 @@ $this->params['breadcrumbs'] = [
 
     <fieldset class="registration-form">
         <p>Войти через:</p>
-        <?= yii\authclient\widgets\AuthChoice::widget([
+        <?php  echo yii\authclient\widgets\AuthChoice::widget([
             'baseAuthUrl' => ['guest/auth']
         ]) ?>
         <p>Или</p>
